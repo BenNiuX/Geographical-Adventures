@@ -23,25 +23,14 @@ public class DetailsDisplay : MonoBehaviour
 		imageList = new List<Image>();
 		countryMap = new Dictionary<string, int>();
 	}
-	int countryIndex = -1;
 
 	// Update is called once per frame
 	void Update()
 	{
-		if (countryIndex == -1)
-		{
-			return;
-		}
 		if (screenWidth != Screen.width || screenHeight != Screen.height)
 		{
 			screenWidth = Screen.width;
 			screenHeight = Screen.height;
-		}
-		if (Time.time % 10 < Time.deltaTime)
-		{
-			var countryName = new List<string>(countryMap.Keys)[countryIndex];
-			showContent(countryName);
-			countryIndex = (countryIndex + 1) % countryMap.Count;
 		}
 	}
 
@@ -74,7 +63,6 @@ public class DetailsDisplay : MonoBehaviour
 		spriteList.Clear();
 		imageList.Clear();
 		countryMap.Clear();
-		countryIndex = -1;
 	}
 
 	void GenerateContent()
@@ -129,11 +117,10 @@ public class DetailsDisplay : MonoBehaviour
 				}
 			}
 		}
-		deactiveAll();
-		countryIndex = 0;
+		HideAll();
 	}
 
-	void deactiveAll()
+	public void HideAll()
 	{
 		foreach (TextMeshProUGUI text in textList)
 		{
@@ -145,9 +132,9 @@ public class DetailsDisplay : MonoBehaviour
 		}
 	}
 
-	void showContent(string countryName)
+	public void ShowContent(string countryName)
 	{
-		deactiveAll();
+		HideAll();
 		var num = countryMap[countryName];
 		var gap = 10;
 		var contentWidth = (screenWidth - 60) / 7;

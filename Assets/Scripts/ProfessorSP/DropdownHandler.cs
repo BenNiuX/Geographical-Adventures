@@ -10,7 +10,6 @@ public class DropdownHandler : MonoBehaviour
 {
 	public TextMeshProUGUI selectedItemText;
 	public CoverController coverController;
-	public DetailsDisplay detailsDisplay;
 	public int maxWidth = 600;
 	public int minWidth = 300;
 
@@ -21,6 +20,9 @@ public class DropdownHandler : MonoBehaviour
 	private List<ForecastData> forecastData;
 	private int screenWidth;
 	private int screenHeight;
+	private float timer = 0f;
+	private const float updateInterval = 60f;
+	private DateTime latestUpdate = DateTime.MinValue;
 
 	private void Start()
 	{
@@ -32,11 +34,6 @@ public class DropdownHandler : MonoBehaviour
 		forecastData = new List<ForecastData>();
 		CheckDataUpdated();
 	}
-
-
-	private float timer = 0f;
-	private const float updateInterval = 60f;
-	private DateTime latestUpdate = DateTime.MinValue;
 
 	void Update()
 	{
@@ -114,8 +111,8 @@ public class DropdownHandler : MonoBehaviour
 		int index = dropdown.value;
 		if (index == 0)
 		{
-			coverController.UpdateCover(null);
-			detailsDisplay.UpdateDetails(null);
+			BsonDocument a = null;
+			coverController.UpdateCover(ref a);
 			selectedItemText.text = "";
 			return;
 		}
@@ -123,8 +120,7 @@ public class DropdownHandler : MonoBehaviour
 		var item = forecastData[index - 1];
 		selectedItemText.text = GetImpactId(item);
 		var impactContent = GetImpactContent(GetImpactId(item));
-		coverController.UpdateCover(impactContent);
-		detailsDisplay.UpdateDetails(impactContent);
+		coverController.UpdateCover(ref impactContent);
 	}
 
 	private string GetImpactId(ForecastData item)

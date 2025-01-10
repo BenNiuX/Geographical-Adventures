@@ -574,21 +574,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 93fab50a97e2720479d567ec092ca6d6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cam: {fileID: 270577113}
-  camDst: -55
-  globeMask:
-    serializedVersion: 2
-    m_Bits: 64
-  poleAngleLimit: 15
-  rotateSensitivity: 0
-  zoomSensitivity: 4
-  fadeSpeed: 2
-  zoomMinMax: {x: 0, y: 0}
-  cursorHighlightRadius: 0
-  globe: {fileID: 521689568}
+  camController: {fileID: 0}
   mapLoader: {fileID: 213576360}
-  canvasScaler: {fileID: 0}
-  heightSettings: {fileID: 11400000, guid: 159ce22bf92aee440ad10625d3e3a8e9, type: 2}
+  detailsDisplay: {fileID: 0}
 --- !u!114 &213576360
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1298,7 +1286,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 323735450}
-  - component: {fileID: 323735451}
   m_Layer: 0
   m_Name: Earth
   m_TagString: Untagged
@@ -1330,33 +1317,6 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &323735451
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 323735449}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 93fab50a97e2720479d567ec092ca6d6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  cam: {fileID: 270577113}
-  camDst: -55
-  globeMask:
-    serializedVersion: 2
-    m_Bits: 64
-  poleAngleLimit: 15
-  rotateSensitivity: 0
-  zoomSensitivity: 4
-  fadeSpeed: 2
-  zoomMinMax: {x: 0, y: 0}
-  cursorHighlightRadius: 0
-  globe: {fileID: 0}
-  mapLoader: {fileID: 0}
-  canvasScaler: {fileID: 0}
-  heightSettings: {fileID: 11400000, guid: 159ce22bf92aee440ad10625d3e3a8e9, type: 2}
 --- !u!1 &355785355
 GameObject:
   m_ObjectHideFlags: 0
@@ -1799,21 +1759,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 93fab50a97e2720479d567ec092ca6d6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cam: {fileID: 270577113}
-  camDst: -55
-  globeMask:
-    serializedVersion: 2
-    m_Bits: 64
-  poleAngleLimit: 15
-  rotateSensitivity: 0
-  zoomSensitivity: 4
-  fadeSpeed: 2
-  zoomMinMax: {x: 0, y: 0}
-  cursorHighlightRadius: 0
-  globe: {fileID: 521689568}
+  camController: {fileID: 868613208}
   mapLoader: {fileID: 213576360}
-  canvasScaler: {fileID: 0}
-  heightSettings: {fileID: 11400000, guid: 159ce22bf92aee440ad10625d3e3a8e9, type: 2}
+  detailsDisplay: {fileID: 1764686006}
 --- !u!4 &629031319
 Transform:
   m_ObjectHideFlags: 0
@@ -2048,6 +1996,7 @@ MonoBehaviour:
   cam: {fileID: 270577113}
   heightSettings: {fileID: 11400000, guid: 159ce22bf92aee440ad10625d3e3a8e9, type: 2}
   canMove: 1
+  moveDuration: 2
 --- !u!4 &868613209
 Transform:
   m_ObjectHideFlags: 0
@@ -2215,7 +2164,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   selectedItemText: {fileID: 1963833638}
   coverController: {fileID: 629031318}
-  detailsDisplay: {fileID: 1764686006}
   maxWidth: 500
   minWidth: 300
 --- !u!1 &1082064875
@@ -2892,7 +2840,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f38bb116d76a05040a94117c91d6449f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  canvas: {fileID: 0}
+  canvas: {fileID: 1764686009}
 --- !u!114 &1764686007
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3067,7 +3015,7 @@ MonoBehaviour:
   m_fontSizeMax: 72
   m_fontStyle: 0
   m_HorizontalAlignment: 1
-  m_VerticalAlignment: 256
+  m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
   m_wordSpacing: 0
