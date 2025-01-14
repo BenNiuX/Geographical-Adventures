@@ -2,6 +2,7 @@ using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace GeographicalAdventures.ProfessorSP
 {
@@ -64,6 +65,22 @@ namespace GeographicalAdventures.ProfessorSP
 		public string impactPrompt { get; set; }
 		[BsonElement("breadth")]
 		public int breadth { get; set; }
+	}
+
+	public struct HlInfo
+	{
+		public string Name;
+		public List<string> SubNames;
+		public Vector3 Center;
+		public uint Population;
+
+		public HlInfo(string name, List<string> names = null, Vector3? center = null, uint population = 0)
+		{
+			Name = name;
+			SubNames = names;
+			Center = center ?? Vector3.zero;
+			Population = population;
+		}
 	}
 
 }

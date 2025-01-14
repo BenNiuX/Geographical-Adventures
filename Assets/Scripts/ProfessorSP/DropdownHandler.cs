@@ -8,10 +8,13 @@ using GeographicalAdventures.ProfessorSP;
 
 public class DropdownHandler : MonoBehaviour
 {
-	public TextMeshProUGUI selectedItemText;
+	[Header("References")]
+	public TextMeshProUGUI menuNote;
 	public CoverController coverController;
-	public int maxWidth = 600;
-	public int minWidth = 300;
+	[Header("Settings")]
+	public int maxWidth = 1000;
+	public int minWidth = 500;
+	public float updateInterval = 60f;
 
 	private const string MONGO_URI = "mongodb+srv://21678145:21678145@cluster0.zemxy3i.mongodb.net";
 	private const string DATABASE_NAME = "ProfessorSP";
@@ -21,7 +24,6 @@ public class DropdownHandler : MonoBehaviour
 	private int screenWidth;
 	private int screenHeight;
 	private float timer = 0f;
-	private const float updateInterval = 60f;
 	private DateTime latestUpdate = DateTime.MinValue;
 
 	private void Start()
@@ -76,6 +78,9 @@ public class DropdownHandler : MonoBehaviour
 		// rectTransform.position = new Vector3(posX, posY, 0);
 		rectTransform.sizeDelta = new Vector2(width, rectTransform.sizeDelta.y);
 		rectTransform.anchoredPosition = new Vector2(posX, posY);
+		rectTransform = menuNote.GetComponent<RectTransform>();
+		posX = posX + width / 2 + 80;
+		rectTransform.anchoredPosition = new Vector2(posX, posY);
 	}
 
 	private void UpdateDropdownItems()
@@ -95,14 +100,13 @@ public class DropdownHandler : MonoBehaviour
 		// var items = colForecast.Aggregate(pipeline).ToList();
 		int maxIndex = data.Count; // Get the total count of items
 		dropdown.options.Add(new TMP_Dropdown.OptionData("--- Select an item ---"));
-		dropdown.value = 0;
 		for (int i = 0; i < data.Count; i++)
 		{
 			var item = data[i];
 			dropdown.options.Add(new TMP_Dropdown.OptionData($"{i + 1}. {item.messages[0].content}"));
 			forecastData.Add(item);
 		}
-
+		dropdown.value = 1;
 		DropdownItemSelected(dropdown);
 	}
 
@@ -113,12 +117,10 @@ public class DropdownHandler : MonoBehaviour
 		{
 			BsonDocument a = null;
 			coverController.UpdateCover(ref a);
-			selectedItemText.text = "";
 			return;
 		}
 		// index == 0 is the guideline item in the dropdown list
 		var item = forecastData[index - 1];
-		selectedItemText.text = GetImpactId(item);
 		var impactContent = GetImpactContent(GetImpactId(item));
 		coverController.UpdateCover(ref impactContent);
 	}

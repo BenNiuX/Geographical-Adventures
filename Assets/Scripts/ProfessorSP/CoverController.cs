@@ -2,6 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using MongoDB.Bson;
+using TMPro;
+using GeographicalAdventures.ProfessorSP;
 
 public class CoverController : MonoBehaviour
 {
@@ -9,6 +11,10 @@ public class CoverController : MonoBehaviour
 	public CamController camController;
 	public CoverMapLoader mapLoader;
 	public DetailsDisplay detailsDisplay;
+	public TextMeshProUGUI pauseText;
+
+	[Header("Settings")]
+	public int displaySeconds = 10;
 
 	GameObject oceanObject;
 	string[] countryNames;
@@ -16,21 +22,12 @@ public class CoverController : MonoBehaviour
 	float[] countryHighlightStates;
 	PlayerAction playerActions;
 	BsonDocument impactContent;
-	List<HlCountryInfo> highlightCountries;
+	List<HlInfo> highlightCountries;
 	int countryIndex = -1;
-	struct HlCountryInfo
-	{
-		public string Name;
-		public Vector3 Center;
+	bool paused = false;
 
-		public HlCountryInfo(string name, Vector3? center = null)
-		{
-			Name = name;
-			Center = center ?? Vector3.zero;
-		}
-	}
-
-	static readonly Color[] hightColors = { Color.red, Color.green, Color.blue, Color.yellow, Color.magenta, Color.cyan };
+	static Color[] hightColors = { Color.red, Color.green, Color.yellow, Color.cyan, Color.grey, Color.magenta };
+	static Color greyColor = Color.grey;
 
 	static readonly Dictionary<string, string> countryNameMap = new Dictionary<string, string>() {
 		{ "USA", "United States" },
@@ -46,7 +43,13 @@ public class CoverController : MonoBehaviour
 	{
 		if (mapLoader.hasLoaded)
 		{
-			highlightCountries = new List<HlCountryInfo>();
+			for (int i = 0; i < hightColors.Length; i++)
+			{
+				hightColors[i].a = 0.7f;
+				greyColor.a = 0.7f;
+
+            }
+			highlightCountries = new List<HlInfo>();
 			oceanObject = mapLoader.oceanObject;
 			oceanObject.SetActive(false);
 			int numCountries = mapLoader.countryObjects.Length;
@@ -72,7 +75,21 @@ public class CoverController : MonoBehaviour
 	{
 		if (impactContent != null)
 		{
-			if (Time.time % 10 < Time.deltaTime && countryIndex != -1)
+			if (Input.GetMouseButtonDown(1))
+			{
+				paused = !paused;
+				pauseText.gameObject.SetActive(paused);
+			}
+			else if (Input.GetKeyDown(KeyCode.Space))
+			{
+				paused = !paused;
+				pauseText.gameObject.SetActive(paused);
+			}
+			if (paused)
+			{
+				return;
+			}
+			if (Time.time % displaySeconds < Time.deltaTime || countryIndex == -1)
 			{
 				DisplayDetail(countryIndex);
 				countryIndex = (countryIndex + 1) % highlightCountries.Count;
@@ -84,7 +101,7 @@ public class CoverController : MonoBehaviour
 	{
 		var country = highlightCountries[index];
 		detailsDisplay.HideAll();
-		camController.MoveTo(country.Name, country.Center, MoveDoneCallback);
+		camController.MoveTo(country, MoveDoneCallback);
 	}
 
 	public void MoveDoneCallback(string name)
@@ -106,11 +123,13 @@ public class CoverController : MonoBehaviour
 	public void UpdateCover(ref BsonDocument content)
 	{
 		ClearHighlights();
+		paused = false;
 		if (content == null)
 		{
 			detailsDisplay.UpdateDetails(null);
 			countryIndex = -1;
 			impactContent = null;
+			camController.ResetView();
 			return;
 		}
 		ParseImpactContent(ref content);
@@ -148,12 +167,39 @@ public class CoverController : MonoBehaviour
 			}
 			if (System.Array.IndexOf(countryNames, newName) == -1)
 			{
+				if (newName == "Global")
+				{
+					List<string> subNames = new List<string>(countryNames);
+					highlightCountries.Add(new HlInfo(newName, subNames));
+				}
+				else if (content.GetElement(newName).Value.ToString().Contains("Countries"))
+				{
+					List<string> subNames = new List<string>();
+					var countriesList = content.GetElement(newName).Value.AsBsonDocument.GetElement("Countries").Value.AsBsonArray.ToList();
+					countriesList.ForEach(country =>
+					{
+						var subName = country.AsString;
+						if (System.Array.IndexOf(countryNames, subName) == -1)
+						{
+							Debug.LogWarning($"Country {subName} not found in loaded map countries");
+						}
+						else
+						{
+							subNames.Add(subName);
+							Debug.Log($"Country {subName} found in loaded map countries");
+						}
+					});
+					if (subNames.Count > 0)
+					{
+						highlightCountries.Add(new HlInfo(newName, subNames));
+					}
+				}
 				Debug.LogWarning($"Country {newName} not found in loaded map countries");
 			}
 			else
 			{
 				Debug.Log($"Country {newName} found in loaded map countries");
-				highlightCountries.Add(new HlCountryInfo(newName));
+				highlightCountries.Add(new HlInfo(newName));
 			}
 		}
 	}
@@ -166,7 +212,7 @@ public class CoverController : MonoBehaviour
 			if (countryHighlightStates[i] == 1)
 			{
 				countryHighlightStates[i] = 0;
-				countryMaterials[i].color = mapLoader.countryColours[i].colour;
+				countryMaterials[i].color = Color.clear;// mapLoader.countryColours[i].colour;
 				mapLoader.countryObjects[i].gameObject.SetActive(false);
 			}
 		}
@@ -176,24 +222,72 @@ public class CoverController : MonoBehaviour
 	{
 		for (int i = 0; i < highlightCountries.Count; i++)
 		{
-			for (int j = 0; j < countryNames.Length; j++)
+			HlInfo info = highlightCountries[i];
+			if (info.SubNames != null)
 			{
-				HlCountryInfo info = highlightCountries[i];
-				if (info.Name == countryNames[j])
+				Vector3 center = Vector3.zero;
+				uint population = 0;
+				foreach (var subName in info.SubNames)
 				{
-					Debug.Log("Highlighting country: " + countryNames[j]);
-					countryHighlightStates[j] = 1;
-					countryMaterials[j].color = hightColors[i % hightColors.Length];
-					var countryObject = mapLoader.countryObjects[j].gameObject;
-					countryObject.SetActive(true);
-					MeshFilter meshFilter = countryObject.GetComponent<MeshFilter>();
-					if (meshFilter != null)
+					for (int j = 0; j < countryNames.Length; j++)
 					{
-						Mesh mesh = meshFilter.mesh;
-						Bounds bounds = mesh.bounds;
-						Vector3 boundsCenter = countryObject.transform.TransformPoint(bounds.center);
-						Debug.Log($"Highlighting country: {countryNames[j]} Bounds center: {boundsCenter}");
-						highlightCountries[i] = new HlCountryInfo(info.Name, boundsCenter);
+						if (subName == countryNames[j])
+						{
+							Debug.Log("Highlighting country: " + subName);
+							countryHighlightStates[j] = 1;
+							if (System.Array.Exists(hightColors, color => color == countryMaterials[j].color))
+							{
+								// Already highlighted
+							}
+							else
+							{
+								countryMaterials[j].color = hightColors[i % hightColors.Length];
+							}
+							var countryObject = mapLoader.countryObjects[j].gameObject;
+							countryObject.SetActive(true);
+							MeshFilter meshFilter = countryObject.GetComponent<MeshFilter>();
+							if (meshFilter != null)
+							{
+								Mesh mesh = meshFilter.mesh;
+								Bounds bounds = mesh.bounds;
+								Vector3 boundsCenter = countryObject.transform.TransformPoint(bounds.center);
+								if (center == Vector3.zero)
+								{
+									center = boundsCenter;
+								}
+								else
+								{
+									center += boundsCenter;
+									center /= 2;
+								}
+								population += (uint)detailsDisplay.GetCountryPopulation(subName);
+								Debug.Log($"Highlighting country: {subName} Bounds center: {boundsCenter}");
+							}
+						}
+					}
+				}
+				highlightCountries[i] = new HlInfo(info.Name, info.SubNames, center, population);
+			}
+			else
+			{
+				for (int j = 0; j < countryNames.Length; j++)
+				{
+					if (info.Name == countryNames[j])
+					{
+						Debug.Log("Highlighting country: " + countryNames[j]);
+						countryHighlightStates[j] = 1;
+						countryMaterials[j].color = hightColors[i % hightColors.Length];
+						var countryObject = mapLoader.countryObjects[j].gameObject;
+						countryObject.SetActive(true);
+						MeshFilter meshFilter = countryObject.GetComponent<MeshFilter>();
+						if (meshFilter != null)
+						{
+							Mesh mesh = meshFilter.mesh;
+							Bounds bounds = mesh.bounds;
+							Vector3 boundsCenter = countryObject.transform.TransformPoint(bounds.center);
+							Debug.Log($"Highlighting country: {countryNames[j]} Bounds center: {boundsCenter}");
+							highlightCountries[i] = new HlInfo(info.Name, null, boundsCenter, (uint)detailsDisplay.GetCountryPopulation(info.Name));
+						}
 					}
 				}
 			}
