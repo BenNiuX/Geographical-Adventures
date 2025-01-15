@@ -80,10 +80,6 @@ public class DetailsDisplay : MonoBehaviour
 
 	void GenerateContent()
 	{
-		if (impactContent == null)
-		{
-			return;
-		}
 		foreach (var element in impactContent)
 		{
 			var countryName = element.Name;
@@ -108,7 +104,7 @@ public class DetailsDisplay : MonoBehaviour
 					if (dataName == "text")
 					{
 						TextMeshProUGUI[] prefabTexts = impactInstance.GetComponentsInChildren<TextMeshProUGUI>();
-						prefabTexts[0].text = aspectName;
+						prefabTexts[0].text = char.ToUpper(aspectName[0]) + aspectName.Substring(1);
 						prefabTexts[1].text = dataValue.ToString();
 					}
 					else if (dataName == "img")

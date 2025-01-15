@@ -2,25 +2,23 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using MongoDB.Bson;
-using MongoDB.Driver;
 using System;
 using GeographicalAdventures.ProfessorSP;
+using UnityEngine.UI;
 
 public class DropdownHandler : MonoBehaviour
 {
 	[Header("References")]
 	public TextMeshProUGUI menuNote;
     public TextMeshProUGUI pauseText;
+	public Button goWebButton;
     public CoverController coverController;
 	[Header("Settings")]
-	public int maxWidth = 1000;
+	public int maxWidth = 2000;
 	public int minWidth = 500;
 	public float updateInterval = 30f;
 
-	private const string MONGO_URI = "mongodb+srv://21678145:21678145@cluster0.zemxy3i.mongodb.net";
-	private const string DATABASE_NAME = "ProfessorSP";
-	private MongoClient client;
-	private IMongoDatabase db;
+	private DatabaseService dbService;
 	private List<ForecastData> forecastData;
 	private int screenWidth;
 	private int screenHeight;
@@ -32,8 +30,7 @@ public class DropdownHandler : MonoBehaviour
 		var dropdown = transform.GetComponent<TMP_Dropdown>();
 		dropdown.options.Clear();
 		dropdown.onValueChanged.AddListener(delegate { DropdownItemSelected(dropdown); });
-		client = new MongoClient(MONGO_URI);
-		db = client.GetDatabase(DATABASE_NAME);
+		dbService = new DatabaseService();
 		forecastData = new List<ForecastData>();
 		CheckDataUpdated();
 	}
@@ -56,12 +53,11 @@ public class DropdownHandler : MonoBehaviour
 
 	void CheckDataUpdated()
 	{
-		var colForecast = db.GetCollection<ForecastData>("Forecast");
-		var sortBuilder = Builders<ForecastData>.Sort;
-		var sort = sortBuilder.Descending(f => f.updatedAt);
-		var filterBuilder = Builders<ForecastData>.Filter;
-		var filter = filterBuilder.Ne(f => f.settings.impactPrompt, null);
-		var data = colForecast.Find(filter).Sort(sort).Limit(1).ToList();
+		dbService.GetLatestData(this, CallbackLatestData);
+	}
+
+	void CallbackLatestData(List<ForecastData> data)
+	{
 		if (data[0].updatedAt > latestUpdate)
 		{
 			UpdateDropdownItems();
@@ -84,24 +80,21 @@ public class DropdownHandler : MonoBehaviour
 		rectTransform.anchoredPosition = new Vector2(posX, posY);
         rectTransform = pauseText.GetComponent<RectTransform>();
         rectTransform.anchoredPosition = new Vector2(0, posY);
+		rectTransform = goWebButton.GetComponent<RectTransform>();
+        Vector2 a = rectTransform.sizeDelta;
+        rectTransform.anchoredPosition = new Vector2(screenWidth / 2 - a.x, posY);
     }
 
 	private void UpdateDropdownItems()
 	{
+		dbService.GetForecastData(this, 10, CallbackData);
+	}
+
+	void CallbackData(List<ForecastData> data)
+	{
 		var dropdown = transform.GetComponent<TMP_Dropdown>();
 		dropdown.options.Clear();
 		forecastData.Clear();
-		var colForecast = db.GetCollection<ForecastData>("Forecast");
-		var sortBuilder = Builders<ForecastData>.Sort;
-		var sort = sortBuilder.Descending(f => f.updatedAt);
-		var filterBuilder = Builders<ForecastData>.Filter;
-		var filter = filterBuilder.Ne(f => f.settings.impactPrompt, null);
-		// filter = Builders<ForecastData>.Filter.Empty;
-		var findOptions = new FindOptions<ForecastData> { BatchSize = 10 };
-		var data = colForecast.Find(filter).Sort(sort).Limit(10).ToList();
-		// var pipeline = new EmptyPipelineDefinition<ForecastData>().Sort(sort).Match(filter);
-		// var items = colForecast.Aggregate(pipeline).ToList();
-		int maxIndex = data.Count; // Get the total count of items
 		dropdown.options.Add(new TMP_Dropdown.OptionData("--- Select an item ---"));
 		for (int i = 0; i < data.Count; i++)
 		{
@@ -112,7 +105,6 @@ public class DropdownHandler : MonoBehaviour
 		dropdown.value = 1;
 		DropdownItemSelected(dropdown);
 	}
-
 	private void DropdownItemSelected(TMP_Dropdown dropdown)
 	{
 		int index = dropdown.value;
@@ -125,8 +117,7 @@ public class DropdownHandler : MonoBehaviour
 		// index == 0 is the guideline item in the dropdown list
 		
 		var item = forecastData[index - 1];
-		var impactContent = GetImpactContent(GetImpactId(item));
-		coverController.UpdateCover(ref impactContent);
+		GetImpactContent(GetImpactId(item));
 	}
 
 	private string GetImpactId(ForecastData item)
@@ -143,11 +134,25 @@ public class DropdownHandler : MonoBehaviour
 		return id;
 	}
 
-	private BsonDocument GetImpactContent(string id)
+	private void GetImpactContent(string id)
 	{
-		var colImpact = db.GetCollection<ImpactData>("impacts");
-		var filter = Builders<ImpactData>.Filter.Eq(f => f._id, id);
-		var impact = colImpact.Find(filter).FirstOrDefault();
-		return impact.content;
+		dbService.GetImpactContent(this, id, CallbackImpactContent);
+	}
+
+	private void CallbackImpactContent(BsonDocument content)
+	{
+		coverController.UpdateCover(ref content);
+	}
+
+	public string GetForecastId()
+	{
+		var dropdown = transform.GetComponent<TMP_Dropdown>();
+		int index = dropdown.value;
+		if (index == 0 || forecastData == null || forecastData.Count == 0)
+		{
+			return null;
+		}
+		var item = forecastData[index - 1];
+		return item._id ?? null;
 	}
 }

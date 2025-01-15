@@ -20,7 +20,6 @@ public class CoverController : MonoBehaviour
 	string[] countryNames;
 	Material[] countryMaterials;
 	float[] countryHighlightStates;
-	PlayerAction playerActions;
 	BsonDocument impactContent;
 	List<HlInfo> highlightCountries;
 	int countryIndex = -1;
@@ -36,7 +35,6 @@ public class CoverController : MonoBehaviour
 
 	void Awake()
 	{
-		playerActions = new PlayerAction();
 	}
 
 	void Start()
@@ -47,8 +45,7 @@ public class CoverController : MonoBehaviour
 			{
 				hightColors[i].a = 0.7f;
 				greyColor.a = 0.7f;
-
-            }
+			}
 			highlightCountries = new List<HlInfo>();
 			oceanObject = mapLoader.oceanObject;
 			oceanObject.SetActive(false);
@@ -91,8 +88,8 @@ public class CoverController : MonoBehaviour
 			}
 			if (Time.time % displaySeconds < Time.deltaTime || countryIndex == -1)
 			{
-				DisplayDetail(countryIndex);
 				countryIndex = (countryIndex + 1) % highlightCountries.Count;
+				DisplayDetail(countryIndex);
 			}
 		}
 	}
@@ -109,21 +106,11 @@ public class CoverController : MonoBehaviour
 		detailsDisplay.ShowContent(name);
 	}
 
-	public void Open()
-	{
-		playerActions.MapControls.Enable();
-	}
-
-	public void Close()
-	{
-		playerActions.MapControls.Disable();
-		ClearHighlights();
-	}
-
 	public void UpdateCover(ref BsonDocument content)
 	{
 		ClearHighlights();
 		paused = false;
+		pauseText.gameObject.SetActive(paused);
 		if (content == null)
 		{
 			detailsDisplay.UpdateDetails(null);
@@ -133,16 +120,22 @@ public class CoverController : MonoBehaviour
 			return;
 		}
 		ParseImpactContent(ref content);
+		StartCoroutine(UpdateUI(content));
+	}
+
+	IEnumerator UpdateUI(BsonDocument content)
+	{
 		HighlightCountries();
 		detailsDisplay.UpdateDetails(content);
+		yield return null;
 		impactContent = content;
 	}
 
 	void ParseImpactContent(ref BsonDocument content)
 	{
-		var impacts = content.ToJson();
 		UpdateHighlightCountries(ref content);
 	}
+
 	void UpdateHighlightCountries(ref BsonDocument content)
 	{
 		highlightCountries.Clear();
@@ -171,28 +164,32 @@ public class CoverController : MonoBehaviour
 					List<string> subNames = new List<string>(countryNames);
 					highlightCountries.Add(new HlInfo(newName, subNames));
 				}
-				else if (content.GetElement(newName).Value.ToString().Contains("Countries"))
+				else
 				{
-					List<string> subNames = new List<string>();
-					var countriesList = content.GetElement(newName).Value.AsBsonDocument.GetElement("Countries").Value.AsBsonArray.ToList();
-					countriesList.ForEach(country =>
+					BsonElement countriesElement;
+					bool tryResult = content.GetElement(newName).Value.AsBsonDocument.TryGetElement("Countries", out countriesElement);
+					if (tryResult)
 					{
-						var subName = country.AsString;
-						if (System.Array.IndexOf(countryNames, subName) == -1)
+						List<string> subNames = new List<string>();
+						var countriesList = countriesElement.Value.AsBsonArray.ToList();
+						countriesList.ForEach(country =>
 						{
-							Debug.LogWarning($"Country {subName} not found in loaded map countries");
-						}
-						else
+							var subName = country.AsString;
+							if (System.Array.IndexOf(countryNames, subName) == -1)
+							{
+								Debug.LogWarning($"Country {subName} not found in loaded map countries");
+							}
+							else
+							{
+								subNames.Add(subName);
+							}
+						});
+						if (subNames.Count > 0)
 						{
-							subNames.Add(subName);
+							highlightCountries.Add(new HlInfo(newName, subNames));
 						}
-					});
-					if (subNames.Count > 0)
-					{
-						highlightCountries.Add(new HlInfo(newName, subNames));
 					}
 				}
-				Debug.LogWarning($"Country {newName} not found in loaded map countries");
 			}
 			else
 			{
@@ -234,6 +231,10 @@ public class CoverController : MonoBehaviour
 							if (System.Array.Exists(hightColors, color => color == countryMaterials[j].color))
 							{
 								// Already highlighted
+							}
+							else if (info.Name == "Global")
+							{
+								countryMaterials[j].color = greyColor;
 							}
 							else
 							{
@@ -285,7 +286,7 @@ public class CoverController : MonoBehaviour
 				}
 			}
 		}
-		countryIndex = 0;
+		// countryIndex = 0;
 	}
 
 }

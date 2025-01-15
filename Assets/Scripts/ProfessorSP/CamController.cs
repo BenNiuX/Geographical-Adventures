@@ -42,33 +42,6 @@ public class CamController : MonoBehaviour
 
 	void Update()
 	{
-		// HandleInput();
-		// HandleMovement();
-	}
-
-	void HandleInput()
-	{
-		// TODO: Implement input handling
-	}
-	void HandleMovement()
-	{
-		if (!canMove)
-		{
-			return;
-		}
-		UpdatePosition(currentSpeed);
-		UpdateRotation(currentSpeed);
-	}
-
-
-	void UpdatePosition(float forwardSpeed)
-	{
-		// transform.position += transform.forward * forwardSpeed * Time.deltaTime;
-	}
-
-	void UpdateRotation(float turnAmount)
-	{
-		transform.Rotate(Vector3.up, turnAmount);
 	}
 
 	public void ResetView()

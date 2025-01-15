@@ -6,7 +6,6 @@ using Seb.Meshing;
 public class CoverMapLoader : MonoBehaviour
 {
 
-	public bool autoLoadOnAwake;
 	public TextAsset countriesLoadFile;
 	public TextAsset oceanLoadFile;
 
@@ -24,10 +23,6 @@ public class CoverMapLoader : MonoBehaviour
 
 	void Awake()
 	{
-		if (autoLoadOnAwake)
-		{
-			Load();
-		}
 	}
 
 	void Update()
