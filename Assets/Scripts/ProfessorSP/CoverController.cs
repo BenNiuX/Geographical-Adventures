@@ -14,7 +14,7 @@ public class CoverController : MonoBehaviour
 	public TextMeshProUGUI pauseText;
 
 	[Header("Settings")]
-	public int displaySeconds = 10;
+	public int displaySeconds = 20;
 
 	GameObject oceanObject;
 	string[] countryNames;
@@ -153,7 +153,6 @@ public class CoverController : MonoBehaviour
 		}
 		foreach (var countryName in names)
 		{
-			Debug.Log($"Country: {countryName}");
 			// var newName = countryName;
 			var newName = countryName.Replace('_', ' ');
 			if (newName != countryName)
@@ -186,7 +185,6 @@ public class CoverController : MonoBehaviour
 						else
 						{
 							subNames.Add(subName);
-							Debug.Log($"Country {subName} found in loaded map countries");
 						}
 					});
 					if (subNames.Count > 0)
@@ -198,7 +196,6 @@ public class CoverController : MonoBehaviour
 			}
 			else
 			{
-				Debug.Log($"Country {newName} found in loaded map countries");
 				highlightCountries.Add(new HlInfo(newName));
 			}
 		}
@@ -233,7 +230,6 @@ public class CoverController : MonoBehaviour
 					{
 						if (subName == countryNames[j])
 						{
-							Debug.Log("Highlighting country: " + subName);
 							countryHighlightStates[j] = 1;
 							if (System.Array.Exists(hightColors, color => color == countryMaterials[j].color))
 							{
@@ -261,7 +257,6 @@ public class CoverController : MonoBehaviour
 									center /= 2;
 								}
 								population += (uint)detailsDisplay.GetCountryPopulation(subName);
-								Debug.Log($"Highlighting country: {subName} Bounds center: {boundsCenter}");
 							}
 						}
 					}
@@ -274,7 +269,6 @@ public class CoverController : MonoBehaviour
 				{
 					if (info.Name == countryNames[j])
 					{
-						Debug.Log("Highlighting country: " + countryNames[j]);
 						countryHighlightStates[j] = 1;
 						countryMaterials[j].color = hightColors[i % hightColors.Length];
 						var countryObject = mapLoader.countryObjects[j].gameObject;
@@ -285,7 +279,6 @@ public class CoverController : MonoBehaviour
 							Mesh mesh = meshFilter.mesh;
 							Bounds bounds = mesh.bounds;
 							Vector3 boundsCenter = countryObject.transform.TransformPoint(bounds.center);
-							Debug.Log($"Highlighting country: {countryNames[j]} Bounds center: {boundsCenter}");
 							highlightCountries[i] = new HlInfo(info.Name, null, boundsCenter, (uint)detailsDisplay.GetCountryPopulation(info.Name));
 						}
 					}

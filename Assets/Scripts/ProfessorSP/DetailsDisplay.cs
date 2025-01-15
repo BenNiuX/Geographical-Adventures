@@ -13,9 +13,9 @@ public class DetailsDisplay : MonoBehaviour
 	public GameObject panelLeft;
 	public GameObject panelRight;
 	public GameObject panelCenter;
-	List<TextMeshProUGUI> textList;
+	public GameObject impactPrefab;
+	List<GameObject> prefabImpactList;
 	List<Sprite> spriteList;
-	List<Image> imageList;
 	TextMeshProUGUI countryText;
 	Sprite countrySprite;
 	Image countryFlag;
@@ -24,11 +24,11 @@ public class DetailsDisplay : MonoBehaviour
 	private int screenHeight;
 	private GameObject[] panels;
 	private Location[] locationsArray;
+	private int paddingTopBottomBak = -1;
 	void Start()
 	{
-		textList = new List<TextMeshProUGUI>();
 		spriteList = new List<Sprite>();
-		imageList = new List<Image>();
+		prefabImpactList = new List<GameObject>();
 		panels = new GameObject[] { panelLeft, panelRight };
 		locationsArray = locations.CreateLocations();
 	}
@@ -56,17 +56,26 @@ public class DetailsDisplay : MonoBehaviour
 
 	void ClearContent()
 	{
-		textList.ForEach(text => Destroy(text.gameObject));
 		spriteList.ForEach(Destroy);
-		imageList.ForEach(image => Destroy(image.gameObject));
-		// Only hide theses objects
-		// Destroy(countryText?.gameObject);
-		// countryText = null;
-		// Destroy(countryFlag?.gameObject);
-		// countryFlag = null;
-		textList.Clear();
+		prefabImpactList.ForEach(Destroy);
+		if (countrySprite != null)
+		{
+			Destroy(countrySprite);
+			countrySprite = null;
+		}
+		if (countryText != null)
+		{
+			Destroy(countryText.gameObject);
+			countryText = null;
+		}
+		if (countryFlag != null)
+		{
+			Destroy(countryFlag.gameObject);
+			countryFlag = null;
+		}
 		spriteList.Clear();
-		imageList.Clear();
+		prefabImpactList.Clear();
+		Resources.UnloadUnusedAssets();
 	}
 
 	void GenerateContent()
@@ -87,40 +96,29 @@ public class DetailsDisplay : MonoBehaviour
 					continue;
 				}
 				var aspectValue = aspectElement.Value;
-
+				GameObject impactInstance = Instantiate(impactPrefab);
+				impactInstance.name = $"{countryName}_{aspectName}";
+				// impactInstance.transform.SetParent(transform);
+				impactInstance.SetActive(false);
+				prefabImpactList.Add(impactInstance);
 				foreach (var dataElement in aspectValue.AsBsonDocument)
 				{
 					var dataName = dataElement.Name;
 					var dataValue = dataElement.Value;
 					if (dataName == "text")
 					{
-						GameObject textObj = new GameObject($"Text_{countryName}_{aspectName}");
-						// textObj.transform.SetParent(transform);
-						TextMeshProUGUI text = textObj.AddComponent<TextMeshProUGUI>();
-						text.text = $"{aspectName} - {dataValue}";
-						RectTransform rectTransform = text.GetComponent<RectTransform>();
-						Debug.Log($"{rectTransform.sizeDelta}");
-						// rectTransform.sizeDelta = new Vector2(100, 100); // Set the width and height of the text zone
-						text.fontSize = 25;
-						text.fontStyle = FontStyles.Bold;
-						text.enableAutoSizing = true;
-                        textList.Add(text);
+						TextMeshProUGUI[] prefabTexts = impactInstance.GetComponentsInChildren<TextMeshProUGUI>();
+						prefabTexts[0].text = aspectName;
+						prefabTexts[1].text = dataValue.ToString();
 					}
 					else if (dataName == "img")
 					{
+						Image[] prefabImages = impactInstance.GetComponentsInChildren<Image>();
+						Image prefabImage = prefabImages[prefabImages.Length - 1];
 						var sprite = GenerateSprite(dataValue.ToString());
 						spriteList.Add(sprite);
-						GameObject imageObj = new GameObject($"Image_{countryName}_{aspectName}");
-						// imageObj.transform.SetParent(transform);
-						Image image = imageObj.AddComponent<Image>();
-						image.preserveAspect = true;
-						RectTransform rectTransform = image.GetComponent<RectTransform>();
-						Debug.Log($"Image: {sprite.texture.width}x{sprite.texture.height}");
-						Debug.Log($"{rectTransform.sizeDelta}");
-						// rectTransform.anchoredPosition = Vector2.zero;
-						rectTransform.sizeDelta = new Vector2(sprite.texture.width, sprite.texture.height);
-						image.sprite = sprite;
-						imageList.Add(image);
+						prefabImage.preserveAspect = true;
+						prefabImage.sprite = sprite;
 					}
 				}
 			}
@@ -139,8 +137,7 @@ public class DetailsDisplay : MonoBehaviour
 
 	public void HideAll()
 	{
-		textList.ForEach(text => updateObj(text.gameObject, false, null));
-		imageList.ForEach(image => updateObj(image.gameObject, false, null));
+		prefabImpactList.ForEach(impact => updateObj(impact, false, null));
 		updateObj(countryText?.gameObject, false, null);
 		updateObj(countryFlag?.gameObject, false, null);
 	}
@@ -149,23 +146,32 @@ public class DetailsDisplay : MonoBehaviour
 	{
 		HideAll();
 		int panelIndex = 0;
-		foreach (TextMeshProUGUI text in textList)
+		int[] panelCount = new int[panels.Length];
+		foreach (GameObject impactPrefab in prefabImpactList)
 		{
-			if (text.gameObject.name.Contains(countryName))
+			if (impactPrefab.name.StartsWith(countryName + "_"))
 			{
-				updateObj(text.gameObject, true, panels[panelIndex].transform);
-				var suffix = text.gameObject.name.Replace("Text_", "");
-				foreach (Image image in imageList)
-				{
-					if (image.gameObject.name.Contains(suffix))
-					{
-						updateObj(image.gameObject, true, panels[panelIndex].transform);
-					}
-				}
+				updateObj(impactPrefab, true, panels[panelIndex].transform);
+				panelCount[panelIndex]++;
 				panelIndex = (panelIndex + 1) % panels.Length;
 			}
-        }
-		if (textList.Count > 0)
+		}
+		for (int i = 0; i < panels.Length; i++)
+		{
+			RectOffset oldPadding = panels[i].GetComponent<VerticalLayoutGroup>().padding;
+			if (paddingTopBottomBak > 0)
+			{
+				oldPadding.top = oldPadding.bottom = paddingTopBottomBak;
+				panels[i].GetComponent<VerticalLayoutGroup>().padding = oldPadding;
+			}
+			if (panelCount[i] == 1)
+			{
+                paddingTopBottomBak = oldPadding.top;
+				oldPadding.top = oldPadding.bottom = (screenHeight - paddingTopBottomBak - paddingTopBottomBak) / 4 + paddingTopBottomBak;
+				panels[i].GetComponent<VerticalLayoutGroup>().padding = oldPadding;
+			}
+		}
+		if (prefabImpactList.Count > 0)
 		{
 			if (countryText == null)
 			{
@@ -177,9 +183,13 @@ public class DetailsDisplay : MonoBehaviour
 			countryText.enableWordWrapping = false;
 			countryText.alignment = TextAlignmentOptions.Center;
 			countryText.enableAutoSizing = true;
+			countryText.fontSizeMin = 30;
+			countryText.fontSizeMax = 200;
 			countryText.fontStyle = FontStyles.Bold;
+			countryText.color = Color.black;
+			countryText.enableWordWrapping = true;
 			RectTransform rectTransform = countryText.GetComponent<RectTransform>();
-			rectTransform.sizeDelta = new Vector2(500, 150);
+			rectTransform.sizeDelta = new Vector2(screenWidth / 6, screenHeight / 6);
 			updateObj(countryText.gameObject, true, panelCenter.transform);
 			foreach (var location in locationsArray)
 			{
@@ -195,7 +205,7 @@ public class DetailsDisplay : MonoBehaviour
 					countryFlag.preserveAspect = true;
 					countrySprite = countryFlag.sprite;
 					RectTransform rectT = countryFlag.GetComponent<RectTransform>();
-					rectT.sizeDelta = new Vector2(150, 150);
+					rectT.sizeDelta = new Vector2(screenHeight / 6, screenHeight / 6);
 					updateObj(countryFlag.gameObject, true, panelCenter.transform);
 					break;
 				}
@@ -243,15 +253,21 @@ public class DetailsDisplay : MonoBehaviour
 	Sprite Texture2SpriteWithBorder(Texture2D tex, int borderSize = 5)
 	{
 		Texture2D borderTex = new Texture2D(tex.width + 2 * borderSize, tex.height + 2 * borderSize);
-		for (int x = 0; x < borderTex.width; x++) {
-			for (int y = 0; y < borderTex.height; y++) {
-				if (x < borderSize || x > borderTex.width - borderSize || y < borderSize || y > borderTex.height - borderSize) {
-					borderTex.SetPixel(x, y, Color.white);
-				} else {
+		for (int x = 0; x < borderTex.width; x++)
+		{
+			for (int y = 0; y < borderTex.height; y++)
+			{
+				if (x < borderSize || x >= borderTex.width - borderSize || y < borderSize || y >= borderTex.height - borderSize)
+				{
+					borderTex.SetPixel(x, y, Color.black);
+				}
+				else
+				{
 					borderTex.SetPixel(x, y, tex.GetPixel(x - borderSize, y - borderSize));
 				}
 			}
 		}
+
 		borderTex.Apply();
 		Sprite sprite = Sprite.Create(borderTex, new Rect(0.0f, 0.0f, borderTex.width, borderTex.height), new Vector2(0.5f, 0.5f));
 		return sprite;

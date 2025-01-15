@@ -10,11 +10,12 @@ public class DropdownHandler : MonoBehaviour
 {
 	[Header("References")]
 	public TextMeshProUGUI menuNote;
-	public CoverController coverController;
+    public TextMeshProUGUI pauseText;
+    public CoverController coverController;
 	[Header("Settings")]
 	public int maxWidth = 1000;
 	public int minWidth = 500;
-	public float updateInterval = 60f;
+	public float updateInterval = 30f;
 
 	private const string MONGO_URI = "mongodb+srv://21678145:21678145@cluster0.zemxy3i.mongodb.net";
 	private const string DATABASE_NAME = "ProfessorSP";
@@ -81,7 +82,9 @@ public class DropdownHandler : MonoBehaviour
 		rectTransform = menuNote.GetComponent<RectTransform>();
 		posX = posX + width / 2 + 80;
 		rectTransform.anchoredPosition = new Vector2(posX, posY);
-	}
+        rectTransform = pauseText.GetComponent<RectTransform>();
+        rectTransform.anchoredPosition = new Vector2(0, posY);
+    }
 
 	private void UpdateDropdownItems()
 	{
@@ -120,6 +123,7 @@ public class DropdownHandler : MonoBehaviour
 			return;
 		}
 		// index == 0 is the guideline item in the dropdown list
+		
 		var item = forecastData[index - 1];
 		var impactContent = GetImpactContent(GetImpactId(item));
 		coverController.UpdateCover(ref impactContent);
