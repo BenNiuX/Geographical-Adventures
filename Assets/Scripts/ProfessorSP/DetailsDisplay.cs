@@ -25,6 +25,9 @@ public class DetailsDisplay : MonoBehaviour
 	private GameObject[] panels;
 	private Location[] locationsArray;
 	private int paddingTopBottomBak = -1;
+	private bool isCountryNameColorWhite = true;
+	private bool isCountryNameCapitalized = true;
+	private bool isCountryNameNewRoman = true;
 	void Start()
 	{
 		spriteList = new List<Sprite>();
@@ -40,6 +43,21 @@ public class DetailsDisplay : MonoBehaviour
 		{
 			screenWidth = Screen.width;
 			screenHeight = Screen.height;
+		}
+		if (Input.GetKey(KeyCode.RightAlt) || Input.GetKey(KeyCode.LeftAlt))
+		{
+			if (Input.GetKeyDown(KeyCode.C))
+			{
+				isCountryNameCapitalized = !isCountryNameCapitalized;
+			}
+			if (Input.GetKeyDown(KeyCode.B))
+			{
+				isCountryNameColorWhite = !isCountryNameColorWhite;
+			}
+			if (Input.GetKeyDown(KeyCode.N))
+			{
+				isCountryNameNewRoman = !isCountryNameNewRoman;
+			}
 		}
 	}
 
@@ -122,7 +140,7 @@ public class DetailsDisplay : MonoBehaviour
 		HideAll();
 	}
 
-	void updateObj(GameObject obj, bool active, Transform parent)
+	void UpdateObj(GameObject obj, bool active, Transform parent)
 	{
 		if (obj != null)
 		{
@@ -133,9 +151,9 @@ public class DetailsDisplay : MonoBehaviour
 
 	public void HideAll()
 	{
-		prefabImpactList.ForEach(impact => updateObj(impact, false, null));
-		updateObj(countryText?.gameObject, false, null);
-		updateObj(countryFlag?.gameObject, false, null);
+		prefabImpactList.ForEach(impact => UpdateObj(impact, false, null));
+		UpdateObj(countryText?.gameObject, false, null);
+		UpdateObj(countryFlag?.gameObject, false, null);
 	}
 
 	public void ShowContent(string countryName)
@@ -147,7 +165,7 @@ public class DetailsDisplay : MonoBehaviour
 		{
 			if (impactPrefab.name.StartsWith(countryName + "_"))
 			{
-				updateObj(impactPrefab, true, panels[panelIndex].transform);
+				UpdateObj(impactPrefab, true, panels[panelIndex].transform);
 				panelCount[panelIndex]++;
 				panelIndex = (panelIndex + 1) % panels.Length;
 			}
@@ -175,18 +193,22 @@ public class DetailsDisplay : MonoBehaviour
 				TextMeshProUGUI text = textObj.AddComponent<TextMeshProUGUI>();
 				countryText = text;
 			}
-			countryText.text = countryName;
+			countryText.text = isCountryNameCapitalized ? countryName.ToUpper() : countryName;
 			countryText.enableWordWrapping = false;
 			countryText.alignment = TextAlignmentOptions.Center;
 			countryText.enableAutoSizing = true;
 			countryText.fontSizeMin = 30;
 			countryText.fontSizeMax = 200;
 			countryText.fontStyle = FontStyles.Bold;
-			countryText.color = Color.black;
+			countryText.color = isCountryNameColorWhite ? Color.white : Color.black;
+			countryText.font = Resources.Load<TMP_FontAsset>(
+				isCountryNameNewRoman ?
+				"Fonts & Materials/Times New Roman SDF"
+				: "Fonts & Materials/LiberationSans SDF");
 			countryText.enableWordWrapping = true;
 			RectTransform rectTransform = countryText.GetComponent<RectTransform>();
 			rectTransform.sizeDelta = new Vector2(screenWidth / 6, screenHeight / 6);
-			updateObj(countryText.gameObject, true, panelCenter.transform);
+			UpdateObj(countryText.gameObject, true, panelCenter.transform);
 			foreach (var location in locationsArray)
 			{
 				if (CountyNameMatch(location.country, countryName))
@@ -202,7 +224,7 @@ public class DetailsDisplay : MonoBehaviour
 					countrySprite = countryFlag.sprite;
 					RectTransform rectT = countryFlag.GetComponent<RectTransform>();
 					rectT.sizeDelta = new Vector2(screenHeight / 6, screenHeight / 6);
-					updateObj(countryFlag.gameObject, true, panelCenter.transform);
+					UpdateObj(countryFlag.gameObject, true, panelCenter.transform);
 					break;
 				}
 			}
