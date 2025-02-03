@@ -25,7 +25,7 @@ public class CoverController : MonoBehaviour
 	int countryIndex = -1;
 	bool paused = false;
 
-	static Color[] hightColors = { Color.red, Color.green, Color.yellow, Color.cyan, Color.grey, Color.magenta };
+	static Color[] hightColors = { Color.red, Color.green, Color.yellow, Color.cyan, Color.magenta };
 	static Color greyColor = Color.grey;
 
 	static readonly Dictionary<string, string> countryNameMap = new Dictionary<string, string>() {
@@ -44,8 +44,8 @@ public class CoverController : MonoBehaviour
 			for (int i = 0; i < hightColors.Length; i++)
 			{
 				hightColors[i].a = 0.7f;
-				greyColor.a = 0.7f;
 			}
+			greyColor.a = 0.7f;
 			highlightCountries = new List<HlInfo>();
 			oceanObject = mapLoader.oceanObject;
 			oceanObject.SetActive(false);

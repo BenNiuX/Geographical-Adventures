@@ -46,6 +46,7 @@ public class ButtonHandler : MonoBehaviour
 
     IEnumerator ReorgniseWindow()
     {
+        yield return null;
         yield return new WaitForSeconds(10f);
         System.Diagnostics.Process[] processList = System.Diagnostics.Process.GetProcesses();
         var resolutionMax = Screen.resolutions[Screen.resolutions.Length - 1];
@@ -59,7 +60,7 @@ public class ButtonHandler : MonoBehaviour
                 {
                     Debug.Log("Found ProfessorSP");
                     SetWindowPos(proc.MainWindowHandle, IntPtr.Zero,
-                        resolutionMax.width - (int)(resolutionMax.width * 0.75f), 0,
+                        resolutionMax.width - (int)(resolutionMax.width * 0.75f) - 7, 0,
                         (int)(resolutionMax.width * 0.75f) + 22, resolutionMax.height + 1,
                         SWP_NOZORDER | SWP_SHOWWINDOW);
                 }
@@ -68,7 +69,7 @@ public class ButtonHandler : MonoBehaviour
                     Debug.Log("Found browser");
                     SetWindowPos(proc.MainWindowHandle, IntPtr.Zero,
                         0 - 7, 0,
-                        (int)(resolutionMax.width * 0.25f), resolutionMax.height + 1,
+                        (int)(resolutionMax.width * 0.25f) + 7, resolutionMax.height + 1,
                         SWP_NOZORDER | SWP_SHOWWINDOW);
                 }
             }

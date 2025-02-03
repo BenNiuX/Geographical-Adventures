@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -87,7 +88,7 @@ public class DropdownHandler : MonoBehaviour
 
 	private void UpdateDropdownItems()
 	{
-		dbService.GetForecastData(this, 10, CallbackData);
+		dbService.GetForecastData(this, 40, CallbackData);
 	}
 
 	void CallbackData(List<ForecastData> data)
@@ -102,9 +103,20 @@ public class DropdownHandler : MonoBehaviour
 			dropdown.options.Add(new TMP_Dropdown.OptionData($"{i + 1}. {item.messages[0].content}"));
 			forecastData.Add(item);
 		}
-		dropdown.value = 1;
+		dropdown.value = 0;
+		DropdownItemSelected(dropdown);
+		StartCoroutine(SelectFirstItem());
+	}
+
+	IEnumerator SelectFirstItem()
+	{
+		yield return null;
+		yield return new WaitForSeconds(10f);
+		var dropdown = transform.GetComponent<TMP_Dropdown>();
+		dropdown.value = 1; // Select the latest one
 		DropdownItemSelected(dropdown);
 	}
+
 	private void DropdownItemSelected(TMP_Dropdown dropdown)
 	{
 		int index = dropdown.value;
@@ -116,8 +128,14 @@ public class DropdownHandler : MonoBehaviour
 		}
 		// index == 0 is the guideline item in the dropdown list
 		
-		var item = forecastData[index - 1];
-		GetImpactContent(GetImpactId(item));
+		if (forecastData != null && index - 1 < forecastData.Count)
+		{
+			var item = forecastData[index - 1];
+			if (item != null)
+			{
+				GetImpactContent(GetImpactId(item));
+			}
+		}
 	}
 
 	private string GetImpactId(ForecastData item)
@@ -128,14 +146,33 @@ public class DropdownHandler : MonoBehaviour
 
 	private string GetImpactIdFromContent(string content)
 	{
-		var start = content.IndexOf("<impacts>") + "<impacts>".Length;
-		var end = content.IndexOf("</impacts>", start);
-		var id = content.Substring(start, end - start);
-		return id;
+		const string startTag = "<impacts>";
+		const string endTag = "</impacts>";
+
+		var start = content.IndexOf(startTag);
+		if (start == -1)
+		{
+			// Consider logging this error or throwing a custom exception
+			return string.Empty;
+		}
+
+		start += startTag.Length;
+		var end = content.IndexOf(endTag, start);
+		if (end == -1)
+		{
+			// Consider logging this error or throwing a custom exception
+			return string.Empty;
+		}
+
+		return content.Substring(start, end - start);
 	}
 
 	private void GetImpactContent(string id)
 	{
+		if (string.IsNullOrEmpty(id))
+		{
+			return;
+		}
 		dbService.GetImpactContent(this, id, CallbackImpactContent);
 	}
 
