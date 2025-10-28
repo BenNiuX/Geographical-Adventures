@@ -85,12 +85,16 @@ public class ButtonHandler : MonoBehaviour
     {
         string curId = dropdownHandler.GetForecastId();
         string query = "";
+        string url = "http://170.64.255.98:3000/";
+        string customUrl = Environment.GetEnvironmentVariable("ProfessorSP_Web");
+        if (customUrl != null)
+        {
+            url = customUrl;
+        }
         if (curId != null)
         {
             query = "?id=" + curId;
         }
-        Application.OpenURL(
-            "https://superhuman-fg-b4eeaadpajgaf0e2.australiacentral-01.azurewebsites.net/"
-            + query);
+        Application.OpenURL(url + query);
     }
 }
