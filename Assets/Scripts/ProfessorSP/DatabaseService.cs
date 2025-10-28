@@ -12,12 +12,23 @@ public class DatabaseService
 {
 	private const string MONGO_URI = "mongodb+srv://21678145:21678145@cluster0.zemxy3i.mongodb.net";
 	private const string DATABASE_NAME = "ProfessorSP";
+
 	private MongoClient client;
 	private IMongoDatabase db;
 	public DatabaseService()
 	{
-		client = new MongoClient(MONGO_URI);
-		db = client.GetDatabase(DATABASE_NAME);
+		string customUri = Environment.GetEnvironmentVariable("ProfessorSP_URI");
+		if (customUri == null)
+		{
+			customUri = MONGO_URI;
+		}
+		client = new MongoClient(customUri);
+		string customDb = Environment.GetEnvironmentVariable("ProfessorSP_DB");
+		if (customDb == null)
+		{
+			customDb = DATABASE_NAME;
+		}
+		db = client.GetDatabase(customDb);
 	}
 	public void GetLatestData(MonoBehaviour mono, Action<List<ForecastData>> callback)
 	{
